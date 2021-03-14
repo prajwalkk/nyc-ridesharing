@@ -1,2 +1,6 @@
 *.csv
 *.pkl
+
+data/*
+*.db
+*.zip
