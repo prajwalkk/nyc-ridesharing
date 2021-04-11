@@ -50,6 +50,59 @@ CREATE EXTENSION postgis
 ```
 5. Run the `final_project.ipynb` to create the tables needed for the project and populate them.
 
+6. Create a Stored function in PostgreSQL.
+
+```SQL
+CREATE OR REPLACE FUNCTION nyc_taxi_schema.get_cust_between_timestamps_lgd(IN timevalue text DEFAULT ''::text,IN timeinterval text DEFAULT  '5 MINUTES'::text)
+    RETURNS TABLE(id integer, tpep_pickup_datetime timestamp without time zone, tpep_dropoff_datetime timestamp without time zone, passenger_count integer, "PULocationID" integer, "DOLocationID" integer, pickup_shape geometry, dropoff_shape geometry)
+    LANGUAGE 'plpgsql'
+    VOLATILE
+    PARALLEL UNSAFE
+    COST 100    ROWS 1000
+
+AS $BODY$
+BEGIN
+RETURN QUERY
+	SELECT
+			rd.id,
+			rd.tpep_pickup_datetime,
+			rd.tpep_dropoff_datetime,
+			rd.passenger_count,
+			rd."PULocationID",
+			rd."DOLocationID",
+			pu_zd."geometry" as pickup_shape,
+			do_zd."geometry" as dropoff_shape
+	FROM
+		nyc_taxi_schema.ride_details as rd
+		JOIN
+		nyc_zones as pu_zd
+		ON rd."PULocationID" = pu_zd."LocationID"
+
+		JOIN
+		nyc_zones as do_zd
+		ON rd."DOLocationID" = do_zd."LocationID"
+
+		WHERE
+			(
+				rd."PULocationID" = 138
+				OR
+				rd."DOLocationID" = 138
+			)
+			AND
+			(
+				rd.tpep_pickup_datetime BETWEEN timeValue::timestamp
+				AND
+				timeValue::timestamp + timeInterval::INTERVAL
+			)
+			AND
+			(
+				rd.passenger_count <= 3
+			)
+			ORDER BY rd.tpep_pickup_datetime ASC;
+END
+$BODY$;
+```
+
 ## Geopandas installation instructions for Windows
 1. These steps assume that you have installed wheel (pip install *.whl on cmd).
 
