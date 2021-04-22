@@ -6,6 +6,8 @@ data/*
 *.db
 *.zip
 .idea/*
+.vscode
+.vscode/*
 
 .ipynb_checkpoints/*
 
