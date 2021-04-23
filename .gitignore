@@ -8,6 +8,7 @@ data/*
 .idea/*
 .vscode/*
 .vscode
+
 .ipynb_checkpoints/*
 
 ### Django ###
