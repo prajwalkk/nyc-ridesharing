@@ -5,6 +5,8 @@ from itertools import combinations
 import networkx as nx
 from utils import *
 import logging
+import os
+import numpy as np
 
 def run(args):
 
@@ -16,23 +18,38 @@ def run(args):
     df =  generate_data(args.start_time_str)
     logging.info(f"Extracted data")
 
-    for pool_size in pool_sizes:
+    month_dir = os.path.join("output", start_time.strftime("%b"))
 
-        for flag in ["pickup", "dropoff"]:
+    for flag in ["pickup", "dropoff"]:
 
-            with open(f'edges_result_{pool_size}_{flag}.csv','w') as fileWriter:
+        out_dir = os.path.join(month_dir, flag)
+        os.makedirs(out_dir, exist_ok=True)
 
+        for pool_size in pool_sizes:
+
+            # Output file
+            out_file = os.path.join(out_dir, f'edges_result_{pool_size}.csv')
+
+            with open(out_file,'w') as fileWriter:
+
+                completed_rows = 0
                 for (i, pool) in enumerate(
                     data_iterator(
                         df, start_time, end_time, pool_size, flag
                     )
                 ):
 
-                    logging.info(f"Pool size = {pool_size}, Flag = {flag}, Pool = {i+1}")
+                    # Some logging
+                    completed_rows += len(pool)
+                    completion_status = np.round((completed_rows / len(df)) * 100, 2)
+                    logging.info(f"Pool size = {pool_size}, Flag = {flag}, Pool = {i+1}, Processed = {completion_status}%")
+
+                    # Graph construction
                     G = nx.Graph()
                     index_list = pool.index.tolist()
                     G.add_nodes_from(index_list)
 
+                    # Compute edge weights
                     for indexA, indexB in combinations(index_list, 2):
 
                         if not check_passenger_count(df, indexA, indexB, 3):
@@ -49,9 +66,11 @@ def run(args):
                             )
                         )
 
+                    # Run algorithm
                     edge_set = nx.algorithms.matching.max_weight_matching(G)
-                    no_of_nodes = set(G.nodes)
 
+                    # Flatten pairs and extract lone node if present
+                    no_of_nodes = set(G.nodes)
                     pairs = set()
 
                     for i in edge_set:
@@ -60,8 +79,8 @@ def run(args):
                     missing_val = no_of_nodes.difference(pairs)
                     edge_set.union(missing_val)
 
-
                     save_edges(edge_set, pool, fileWriter)
+
 
 if __name__== "__main__":
 
