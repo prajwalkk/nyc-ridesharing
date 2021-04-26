@@ -88,7 +88,7 @@ RETURN QUERY
 		)
 		AND
 		(
-			rd.passenger_count <= 3
+			rd.passenger_count < 3
 		)
 		ORDER BY rd.tpep_pickup_datetime ASC;
 END
