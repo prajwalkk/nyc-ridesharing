@@ -1,6 +1,7 @@
 import pandas as pd
 from sqlalchemy import create_engine
 from datetime import timedelta
+import csv
 
 # Initialization code
 interzonal_dist = pd.read_csv("../data/interzonal.csv")
@@ -89,4 +90,12 @@ def calc_edge_weight(pool, indexA, indexB, distance_fn, time_fn, flag, pool_size
 
     weight = distance_fn(row1, row2, flag) + time_fn(row1, row2, pool_size)
     return weight
+
+def save_edges(edges, pool, fileWriter):
+
+    writer=csv.writer(fileWriter, delimiter=',',lineterminator='\n')
+
+    for pairs in edges:
+        edge_row = list(pairs)
+        writer.writerow(edge_row)
 

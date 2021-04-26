@@ -20,45 +20,48 @@ def run(args):
 
         for flag in ["pickup", "dropoff"]:
 
-            for (i, pool) in enumerate(
-                data_iterator(
-                    df, start_time, end_time, pool_size, flag
-                )
-            ):
+            with open(f'edges_result_{pool_size}_{flag}.csv','w') as fileWriter:
 
-                logging.info(f"Pool size = {pool_size}, Flag = {flag}, Pool = {i+1}")
-                G = nx.Graph()
-                index_list = pool.index.tolist()
-                G.add_nodes_from(index_list)
-
-                for indexA, indexB in combinations(index_list, 2):
-
-                    if not check_passenger_count(df, indexA, indexB, 3):
-                        continue
-                    G.add_edge(
-                        indexA,
-                        indexB,
-                        weight=calc_edge_weight(
-                            pool,
-                            indexA, indexB,
-                            calc_distance_weight, calc_time_weight,
-                            "pickup",
-                            pool_size
-                        )
+                for (i, pool) in enumerate(
+                    data_iterator(
+                        df, start_time, end_time, pool_size, flag
                     )
+                ):
 
-                edge_set = nx.algorithms.matching.max_weight_matching(G)
-                no_of_nodes = set(G.nodes)
+                    logging.info(f"Pool size = {pool_size}, Flag = {flag}, Pool = {i+1}")
+                    G = nx.Graph()
+                    index_list = pool.index.tolist()
+                    G.add_nodes_from(index_list)
 
-                pairs = set()
+                    for indexA, indexB in combinations(index_list, 2):
 
-                for i in edge_set:
-                    tmp_set = set(i)
-                    pairs = pairs.union(tmp_set)
-                missing_val = no_of_nodes.difference(pairs)
-                edge_set.union(missing_val)
+                        if not check_passenger_count(df, indexA, indexB, 3):
+                            continue
+                        G.add_edge(
+                            indexA,
+                            indexB,
+                            weight=calc_edge_weight(
+                                pool,
+                                indexA, indexB,
+                                calc_distance_weight, calc_time_weight,
+                                "pickup",
+                                pool_size
+                            )
+                        )
 
-                show_viz(edge_set, pool)
+                    edge_set = nx.algorithms.matching.max_weight_matching(G)
+                    no_of_nodes = set(G.nodes)
+
+                    pairs = set()
+
+                    for i in edge_set:
+                        tmp_set = set(i)
+                        pairs = pairs.union(tmp_set)
+                    missing_val = no_of_nodes.difference(pairs)
+                    edge_set.union(missing_val)
+
+
+                    save_edges(edge_set, pool, fileWriter)
 
 if __name__== "__main__":
 
