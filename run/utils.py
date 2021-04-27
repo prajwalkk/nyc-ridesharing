@@ -10,6 +10,7 @@ lgd_flag = {
     "dropoff": 'DOLocationID'
 }
 
+
 def generate_data(time_str):
 
     conn_string = "postgresql://nycrideshare:nycrideshare@127.0.0.1:5432/nyc_taxi"
@@ -28,9 +29,11 @@ def generate_data(time_str):
     # Get the dataframe
     df_temp = pd.read_sql_query(query, nyc_database)
     # Add the distance to all the the rows
-    df_temp["Distance"] = df_temp.apply(lambda row: interzonal_dist.iloc[row["PULocationID"]-1, row["DOLocationID"]-1], axis=1)
+    df_temp["Distance"] = df_temp.apply(
+        lambda row: interzonal_dist.iloc[row["PULocationID"]-1, row["DOLocationID"]-1], axis=1)
 
     return df_temp.set_index("id", drop=True)
+
 
 def data_iterator(df, ts_start, ts_end, delta_in_seconds, flag):
     '''
@@ -52,6 +55,7 @@ def data_iterator(df, ts_start, ts_end, delta_in_seconds, flag):
 
         current += delta
 
+
 def check_passenger_count(pool, indexA, indexB, max_passenger_count):
 
     row1 = pool.loc[indexA, :]
@@ -59,29 +63,32 @@ def check_passenger_count(pool, indexA, indexB, max_passenger_count):
     Pa, Pb = row1["passenger_count"], row2["passenger_count"]
     return (max_passenger_count - (Pa + Pb) >= 0)
 
+
 def calc_distance_weight(row1, row2, flag):
 
     Da = row1["Distance"]
     Db = row2["Distance"]
-    column_name = "DOLocationID" if flag=="pickup" else "PULocationID"
+    column_name = "DOLocationID" if flag == "pickup" else "PULocationID"
     Dab = interzonal_dist.iloc[
-        row1[column_name]-1, 
+        row1[column_name]-1,
         row2[column_name]-1
     ]
     Dba = interzonal_dist.iloc[
-        row1[column_name]-1, 
+        row1[column_name]-1,
         row2[column_name]-1
     ]
     Dmin = min(Da + Dab, Db + Dba)
     savings = Da + Db - Dmin
     return savings / (Da + Db)
-    
+
+
 def calc_time_weight(row1, row2, pool_size):
 
     Ta = row1["tpep_pickup_datetime"]
     Tb = row2["tpep_pickup_datetime"]
     Tab = abs(Tb - Ta).seconds
     return (pool_size - Tab) / pool_size
+
 
 def calc_edge_weight(pool, indexA, indexB, distance_fn, time_fn, flag, pool_size):
 
@@ -91,11 +98,13 @@ def calc_edge_weight(pool, indexA, indexB, distance_fn, time_fn, flag, pool_size
     weight = distance_fn(row1, row2, flag) + time_fn(row1, row2, pool_size)
     return weight
 
-def save_edges(edges, pool, fileWriter):
 
-    writer=csv.writer(fileWriter, delimiter=',',lineterminator='\n')
+def save_edges(edges, missing_val, pool, fileWriter):
+
+    writer = csv.writer(fileWriter, delimiter=',', lineterminator='\n')
 
     for pairs in edges:
         edge_row = list(pairs)
         writer.writerow(edge_row)
-
+    if len(missing_val):
+        writer.writerow(list(missing_val))
