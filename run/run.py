@@ -8,14 +8,16 @@ import logging
 import os
 import numpy as np
 
+
 def run(args):
 
     pool_sizes = [300, 420, 600]
     start_time = datetime.strptime(args.start_time_str, '%Y-%m-%d %H:%M:%S')
     end_time = start_time + relativedelta(months=+1)
 
-    logging.info(f"Extracting one month data starting from {args.start_time_str}")
-    df =  generate_data(args.start_time_str)
+    logging.info(
+        f"Extracting one month data starting from {args.start_time_str}")
+    df = generate_data(args.start_time_str)
     logging.info(f"Extracted data")
 
     month_dir = os.path.join("output", start_time.strftime("%b"))
@@ -30,7 +32,7 @@ def run(args):
             # Output file
             out_file = os.path.join(out_dir, f'edges_result_{pool_size}.csv')
 
-            with open(out_file,'w') as fileWriter:
+            with open(out_file, 'w') as fileWriter:
 
                 completed_rows = 0
                 for (i, pool) in enumerate(
@@ -41,8 +43,10 @@ def run(args):
 
                     # Some logging
                     completed_rows += len(pool)
-                    completion_status = np.round((completed_rows / len(df)) * 100, 2)
-                    logging.info(f"Pool size = {pool_size}, Flag = {flag}, Pool = {i+1}, Processed = {completion_status}%")
+                    completion_status = np.round(
+                        (completed_rows / len(df)) * 100, 2)
+                    logging.info(
+                        f"Pool size = {pool_size}, Flag = {flag}, Pool = {i+1}, Processed = {completion_status}%")
 
                     # Graph construction
                     G = nx.Graph()
@@ -77,15 +81,17 @@ def run(args):
                         tmp_set = set(i)
                         pairs = pairs.union(tmp_set)
                     missing_val = no_of_nodes.difference(pairs)
-                    edge_set.union(missing_val)
+                    edge_set = edge_set.union(missing_val)
 
                     save_edges(edge_set, pool, fileWriter)
 
 
-if __name__== "__main__":
+if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser(description="Simulation of a single month")
-    parser.add_argument("--start_time_str", type=str, default="2019-01-01 00:00:00", help="Start time for data")
+    parser = argparse.ArgumentParser(
+        description="Simulation of a single month")
+    parser.add_argument("--start_time_str", type=str,
+                        default="2019-01-01 00:00:00", help="Start time for data")
 
     args = parser.parse_args()
 
