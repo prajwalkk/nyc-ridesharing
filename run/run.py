@@ -13,7 +13,7 @@ import json
 
 def run(args):
 
-    pool_sizes = [300, 420, 600] # pool sizes
+    pool_sizes = [300, 420, 600]  # pool sizes
     start_time = datetime.strptime(args.start_time_str, '%Y-%m-%d %H:%M:%S')
     end_time = start_time + relativedelta(months=+1)
 
@@ -25,7 +25,7 @@ def run(args):
     # Storing run-time statistics
     runtime_stats = {}
     total_runtime, max_runtime, min_runtime = 0, 0, float('inf')
-    max_rows_in_pool, min_rows_in_pool = 0, 0, float('inf')
+    max_rows_in_pool, min_rows_in_pool = 0, float('inf')
 
     month_dir = os.path.join("output", start_time.strftime("%b"))
 
@@ -43,7 +43,7 @@ def run(args):
 
             with open(out_file, 'w') as fileWriter:
 
-                completed_rows = 0 # number of processed rows
+                completed_rows = 0  # number of processed rows
 
                 # loop over pools
                 for (i, pool) in enumerate(
@@ -56,9 +56,10 @@ def run(args):
                     completed_rows += len(pool)
 
                     completion_status = np.round(completed_rows / len(df), 2)
-                    logging.info(f"Pool size = {pool_size}, Flag = {flag}, Pool = {i+1}, Processed = {completion_status}%")
+                    logging.info(
+                        f"Pool size = {pool_size}, Flag = {flag}, Pool = {i+1}, Processed = {completion_status}%")
 
-                    tic = time.perf_counter() # start permormance measure
+                    tic = time.perf_counter()  # start permormance measure
 
                     # Graph construction
                     G = nx.Graph()
@@ -94,7 +95,7 @@ def run(args):
                         pairs = pairs.union(tmp_set)
                     missing_val = no_of_nodes.difference(pairs)
 
-                    toc = time.perf_counter() # end performance measure
+                    toc = time.perf_counter()  # end performance measure
 
                     # calculate run-time stats
                     runtime = toc - tic
@@ -116,9 +117,11 @@ def run(args):
                 runtime_stats["min_runtime"] = min_runtime
                 runtime_stats["max_rows_in_pool"] = max_rows_in_pool
 
-                json_file = os.path.join(out_dir, f'pool_stats_{pool_size}.csv')
+                json_file = os.path.join(
+                    out_dir, f'pool_stats_{pool_size}.csv')
                 with open(json_file, 'w') as fp:
                     json.dump(runtime_stats, fp)
+
 
 if __name__ == "__main__":
 
