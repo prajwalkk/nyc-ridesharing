@@ -77,13 +77,12 @@ def run(args):
                     no_of_nodes = set(G.nodes)
                     pairs = set()
 
-                    for i in edge_set:
-                        tmp_set = set(i)
+                    for edges in edge_set:
+                        tmp_set = set(edges)
                         pairs = pairs.union(tmp_set)
                     missing_val = no_of_nodes.difference(pairs)
-                    edge_set = edge_set.union(missing_val)
 
-                    save_edges(edge_set, pool, fileWriter)
+                    save_edges(edge_set, missing_val, pool, fileWriter)
 
 
 if __name__ == "__main__":
