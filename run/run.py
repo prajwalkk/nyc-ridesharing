@@ -7,10 +7,12 @@ from utils import *
 import logging
 import os
 import numpy as np
+import time
+import json
 
 def run(args):
 
-    pool_sizes = [300, 420, 600]
+    pool_sizes = [300, 420, 600] # pool sizes
     start_time = datetime.strptime(args.start_time_str, '%Y-%m-%d %H:%M:%S')
     end_time = start_time + relativedelta(months=+1)
 
@@ -18,13 +20,20 @@ def run(args):
     df =  generate_data(args.start_time_str)
     logging.info(f"Extracted data")
 
+    # Storing run-time statistics
+    runtime_stats = {}
+    total_runtime, max_runtime, min_runtime = 0, 0, float('inf')
+    max_rows_in_pool, min_rows_in_pool = 0, 0, float('inf')
+
     month_dir = os.path.join("output", start_time.strftime("%b"))
 
+    # loop over flag
     for flag in ["pickup", "dropoff"]:
 
         out_dir = os.path.join(month_dir, flag)
         os.makedirs(out_dir, exist_ok=True)
 
+        # loop over pool sizes
         for pool_size in pool_sizes:
 
             # Output file
@@ -32,7 +41,9 @@ def run(args):
 
             with open(out_file,'w') as fileWriter:
 
-                completed_rows = 0
+                completed_rows = 0 # number of processed rows
+
+                # loop over pools
                 for (i, pool) in enumerate(
                     data_iterator(
                         df, start_time, end_time, pool_size, flag
@@ -41,8 +52,10 @@ def run(args):
 
                     # Some logging
                     completed_rows += len(pool)
-                    completion_status = np.round((completed_rows / len(df)) * 100, 2)
+                    completion_status = np.round(completed_rows / len(df), 2)
                     logging.info(f"Pool size = {pool_size}, Flag = {flag}, Pool = {i+1}, Processed = {completion_status}%")
+
+                    tic = time.perf_counter() # start permormance measure
 
                     # Graph construction
                     G = nx.Graph()
@@ -79,8 +92,31 @@ def run(args):
                     missing_val = no_of_nodes.difference(pairs)
                     edge_set.union(missing_val)
 
+                    toc = time.perf_counter() # end performance measure
+
+                    # calculate run-time stats
+                    runtime = toc - tic
+                    total_runtime += runtime
+                    max_runtime = max(max_runtime, runtime)
+                    min_runtime = min(min_runtime, runtime)
+                    min_rows_in_pool = min(min_rows_in_pool, len(pool))
+                    max_rows_in_pool = max(max_rows_in_pool, len(pool))
+
+                    # save edges to file
                     save_edges(edge_set, pool, fileWriter)
 
+                # store run-time stats in JSON
+                avg_runtime = total_runtime / (i + 1)
+                runtime_stats["total_runtime"] = total_runtime
+                runtime_stats["avg_runtime"] = avg_runtime
+                runtime_stats["num_pools"] = i + 1
+                runtime_stats["max_runtime"] = max_runtime
+                runtime_stats["min_runtime"] = min_runtime
+                runtime_stats["max_rows_in_pool"] = max_rows_in_pool
+
+                json_file = os.path.join(out_dir, f'pool_stats_{pool_size}.csv')
+                with open(json_file, 'w') as fp:
+                    json.dump(runtime_stats, fp)
 
 if __name__== "__main__":
 
