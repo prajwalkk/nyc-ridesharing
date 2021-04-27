@@ -1,0 +1,22 @@
+name: dbms-env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.7
+  - jupyter
+  - matplotlib
+  - numpy
+  - pandas
+  - psycopg2
+  - scikit-learn
+  - scipy
+  - sqlalchemy==1.4.1
+  - sqlite
+  - gdal
+  - pyproj
+  - fiona
+  - shapely
+  - geopandas
+  - geoalchemy2
+  - networkx
