@@ -82,6 +82,16 @@ def calc_distance_weight(row1, row2, flag):
     return savings / (Da + Db)
 
 
+def getOSRMComputedDistance(pickupID, dropoffID):
+
+    Dab = interzonal_dist.iloc[
+        pickupID-1,
+        dropoffID-1
+    ]
+
+    return Dab
+
+
 def calc_time_weight(row1, row2, pool_size):
 
     Ta = row1["tpep_pickup_datetime"]
