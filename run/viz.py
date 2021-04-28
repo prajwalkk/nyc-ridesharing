@@ -12,6 +12,7 @@ import logging
 import utils
 from time import strptime
 from datetime import datetime
+import json
 
 # png_renderer = pio.renderers["png"]
 # pio.renderers.default = "png"
@@ -243,10 +244,10 @@ def load_edges_DOWeek_single_pool(poolSize):
         VZ_RIDES_POOLED_PERCENT[idx] = VZ_RIDES_POOLED[idx] / VZ_RIDES_TOTAL[idx]
         VZ_RIDES_SAVED_PERCENT[idx] = VZ_RIDES_SAVED[idx] / VZ_RIDES_TOTAL[idx]
 
-        #VZ_C_DAY_PERCENT.append( (VZ_C_DAY_TOTAL[idx] - VZ_C_DAY_POOLED[idx]) / VZ_C_DAY_TOTAL[idx] )
-        VZ_C_DAY_PERCENT.append( VZ_C_DAY_POOLED[idx] / VZ_C_DAY_TOTAL[idx] )
-        #VZ_C_NIGHT_PERCENT.append( (VZ_C_NIGHT_TOTAL[idx] - VZ_C_NIGHT_POOLED[idx]) / VZ_C_NIGHT_TOTAL[idx] )
-        VZ_C_NIGHT_PERCENT.append( VZ_C_NIGHT_POOLED[idx] / VZ_C_NIGHT_TOTAL[idx] )
+        VZ_C_DAY_PERCENT.append( (VZ_C_DAY_TOTAL[idx] - VZ_C_DAY_POOLED[idx]) / VZ_C_DAY_TOTAL[idx] )
+        #VZ_C_DAY_PERCENT.append( VZ_C_DAY_POOLED[idx] / VZ_C_DAY_TOTAL[idx] )
+        VZ_C_NIGHT_PERCENT.append( (VZ_C_NIGHT_TOTAL[idx] - VZ_C_NIGHT_POOLED[idx]) / VZ_C_NIGHT_TOTAL[idx] )
+        #VZ_C_NIGHT_PERCENT.append( VZ_C_NIGHT_POOLED[idx] / VZ_C_NIGHT_TOTAL[idx] )
 
         
 
@@ -292,10 +293,80 @@ def load_edges_DOWeek_single_pool(poolSize):
 
     plt.show()
 
+def viz_computation_vals(poolSize):
+
+    # "total_runtime": 3514.348712299995, 
+    # "avg_runtime": 0.3936322482414869, 
+    # "num_pools": 8928, 
+
+    TOTAL_RUNTIME = [0,0,0,0,0,0]
+    AVG_RUNTIME = [0,0,0,0,0,0]
+    AVG_NUM_POOLS = [0,0,0,0,0,0]
+
+    for mID, month in enumerate(MONTHS):
+        for action in ["pickup","dropoff"]:
+            print(f"Processing {month}-{action}")
+            fp = f'./output/{month}/{action}/pool_stats_{poolSize}.csv'
+
+            # Opening JSON file
+            f = open(fp,)
+            
+            # returns JSON object as 
+            # a dictionary
+            data = json.load(f)
+            
+            # Iterating through the json
+            TOTAL_RUNTIME[mID] += data['total_runtime']
+            AVG_RUNTIME[mID] += data['avg_runtime']
+            AVG_NUM_POOLS[mID] += data['num_pools']
+
+            print()
+            
+            # Closing file
+            f.close()
+
+    # create the graph here 
+    labels = MONTHS
+    x = np.arange(len(labels))  # the label locations
+    width = 0.2  # the width of the bars
+
+    fig, axs = plt.subplots(3)
+
+    rects1 = axs[0].bar(x, [ int(r/60) for r in TOTAL_RUNTIME], width, label='TOTAL RUNTIME', align='center', color='lightgreen')
+    rects2 = axs[1].bar(x, AVG_RUNTIME, width, label='AVG RUNTIME', align='center', color='purple')
+    rects2 = axs[2].bar(x, AVG_NUM_POOLS, width, label='AVG NUM POOLS', align='center', color='red')
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    axs[0].set_ylabel('Minutes')
+    axs[0].set_xticks(x)
+    axs[0].set_xticklabels(labels)
+    axs[0].legend()
+
+    axs[1].set_ylabel('Seconds')
+    axs[1].set_xticks(x)
+    axs[1].set_xticklabels(labels)
+    axs[1].legend()
+
+    axs[2].set_ylabel('No of Pools')
+    axs[2].set_xticks(x)
+    axs[2].set_xticklabels(labels)
+    axs[2].legend()
+
+    fig.suptitle(f'Computation Graphs ({poolSize} secs)')
+    plt.show()
+
+
+    
+
+
+
+
+
 
 for pool in pool_sizes: 
     # load_edges_single_pool(pool)
-    load_edges_DOWeek_single_pool(pool)
+    # load_edges_DOWeek_single_pool(pool)
+    viz_computation_vals(pool)
 
 def load_viz():
     labels = ['Jan', 'Feb']
