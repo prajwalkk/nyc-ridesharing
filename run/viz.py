@@ -11,6 +11,8 @@ import plotly.io as pio
 import logging
 import utils
 from time import strptime
+from datetime import datetime
+
 # png_renderer = pio.renderers["png"]
 # pio.renderers.default = "png"
 
@@ -141,12 +143,159 @@ def load_edges_single_pool(poolSize):
 
     plt.show()
 
+def load_edges_DOWeek_single_pool(poolSize):
+
+    print(f'Processing pool size - {poolSize}')
+
+    VZ_DIST_ORIGINAL = [0,0,0,0,0,0,0]
+    VZ_DIST_POOLED = [0,0,0,0,0,0,0]
+    VZ_DIST_SAVED_PERCENT = [0,0,0,0,0,0,0]
+
+    VZ_RIDES_TOTAL = [0,0,0,0,0,0,0]
+    VZ_RIDES_POOLED = [0,0,0,0,0,0,0]
+    VZ_RIDES_SAVED = [0,0,0,0,0,0,0]
+    VZ_RIDES_POOLED_PERCENT = [0,0,0,0,0,0,0]
+    VZ_RIDES_SAVED_PERCENT = [0,0,0,0,0,0,0]
+
+    VZ_C_DAY_TOTAL = [0,0,0,0,0,0,0]
+    VZ_C_NIGHT_TOTAL = [0,0,0,0,0,0,0]
+    VZ_C_DAY_POOLED = [0,0,0,0,0,0,0]
+    VZ_C_NIGHT_POOLED = [0,0,0,0,0,0,0]
+
+
+    month = 'May'
+    month_id = 5
+    df_data = utils.generate_data(f"2019-0{month_id}-01 00:00:00")
+
+    for action in ["pickup","dropoff"]:
+        print(f"Processing {month}-{action}")
+
+        fp = f'./output/{month}/{action}/edges_result_{poolSize}.csv'
+        df_pairs = pd.read_csv(fp, header = None, names=['p1', 'p2'])       
+        
+        # for each record in df_pairs
+        for idx in range(len(df_pairs)) :
+
+            if idx % 100000 == 0: 
+                print(idx)
+
+            p1, p2 = df_pairs.iloc[idx, 0], df_pairs.iloc[idx, 1]
+
+            p1_data = df_data.loc[p1,:]
+
+            # RESOLVE DAY OF WEEK ITERATOR HERE 
+            # where Monday is 0 and Sunday is 6 
+            obj_dt = datetime.strptime(str(p1_data['tpep_pickup_datetime']), '%Y-%m-%d %H:%M:%S')
+            record_DOW = obj_dt.weekday()
+            record_DOW = (record_DOW + 1) % 7 
+
+            record_HrDay = obj_dt.hour
+
+
+            # if p2 is not NaN, retrieve the data
+            if not np.isnan(p2):
+                p2_data = df_data.loc[p2,:]
+            else:
+                p2_data = None
+
+            OSRM_dist_P1_dropoff = utils.getOSRMComputedDistance( p1_data.loc['PULocationID'], p1_data.loc['DOLocationID'] )
+
+            if p2_data is not None:
+                OSRM_dist_P2_dropoff = utils.getOSRMComputedDistance( p2_data.loc['PULocationID'], p2_data.loc['DOLocationID'] )
+                OSRM_dist_P1_P2 = utils.getOSRMComputedDistance( p1_data.loc['PULocationID'], p2_data.loc['PULocationID'] )
+
+                # use this variable to count if 2 rides are pooled
+                VZ_RIDES_TOTAL[record_DOW] += 2
+                VZ_RIDES_POOLED[record_DOW] += 2 
+                VZ_RIDES_SAVED[record_DOW] += 1 
+
+
+            else:
+                OSRM_dist_P2_dropoff = 0
+                OSRM_dist_P1_P2 = 0
+
+                VZ_RIDES_TOTAL[record_DOW] += 1
+
+            distance_original = OSRM_dist_P1_dropoff + OSRM_dist_P2_dropoff
+            distance_pooled = OSRM_dist_P1_P2 + OSRM_dist_P2_dropoff
+
+            # use this as the cost metric
+            if record_HrDay >= 6 and record_HrDay <= 19:
+                VZ_C_DAY_TOTAL[record_DOW] += 2.5 + (distance_original * 1.56)
+                VZ_C_DAY_POOLED[record_DOW] += 2.5 + (distance_pooled * 1.56)
+            else:
+                VZ_C_NIGHT_TOTAL[record_DOW] += 3.0 + (distance_original * 1.7)
+                VZ_C_NIGHT_POOLED[record_DOW] += 3.0 + (distance_pooled * 1.7)
+
+            VZ_DIST_ORIGINAL[record_DOW] += distance_original
+            VZ_DIST_POOLED[record_DOW] += distance_pooled
+
+
+    
+    # insert them into viz arrays 
+    VZ_C_DAY_PERCENT = []
+    VZ_C_NIGHT_PERCENT = []
+
+    for idx in range(0,7):
+        saved_dist = VZ_DIST_ORIGINAL[idx] - VZ_DIST_POOLED[idx]
+        VZ_DIST_SAVED_PERCENT[idx] = saved_dist/VZ_DIST_ORIGINAL[idx]
+
+        VZ_RIDES_POOLED_PERCENT[idx] = VZ_RIDES_POOLED[idx] / VZ_RIDES_TOTAL[idx]
+        VZ_RIDES_SAVED_PERCENT[idx] = VZ_RIDES_SAVED[idx] / VZ_RIDES_TOTAL[idx]
+
+        #VZ_C_DAY_PERCENT.append( (VZ_C_DAY_TOTAL[idx] - VZ_C_DAY_POOLED[idx]) / VZ_C_DAY_TOTAL[idx] )
+        VZ_C_DAY_PERCENT.append( VZ_C_DAY_POOLED[idx] / VZ_C_DAY_TOTAL[idx] )
+        #VZ_C_NIGHT_PERCENT.append( (VZ_C_NIGHT_TOTAL[idx] - VZ_C_NIGHT_POOLED[idx]) / VZ_C_NIGHT_TOTAL[idx] )
+        VZ_C_NIGHT_PERCENT.append( VZ_C_NIGHT_POOLED[idx] / VZ_C_NIGHT_TOTAL[idx] )
+
+        
+
+
+    
+    # create the graph here 
+    labels = DAYS_OF_WEEK
+    x = np.arange(len(labels))  # the label locations
+    width = 0.3  # the width of the bars
+
+    fig, ax = plt.subplots()
+    rects3 = ax.bar(x + width, [dist * 100 for dist in VZ_RIDES_SAVED_PERCENT], width, label='% Trips Saved', align='center')
+    rects2 = ax.bar(x, [dist * 100 for dist in VZ_DIST_SAVED_PERCENT], width, label='% DISTANCES Saved', align='center')
+    rects1 = ax.bar(x - width, [rides * 100 for rides in VZ_RIDES_POOLED_PERCENT], width, label='%Utilization', align='center')
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel('Percentage')
+    ax.set_title(f'Metric Breakdown by Days of Week - ({poolSize/60} mins)')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.legend()
+
+    ax.bar_label(rects1, padding=3)
+    ax.bar_label(rects2, padding=3)
+    ax.bar_label(rects3, padding=3)
+    fig.tight_layout()
+
+    plt.show()
+
+    fig, ax = plt.subplots()
+    rects2 = ax.bar(x, [c * 100 for c in VZ_C_NIGHT_PERCENT], width, label='%Night Savings', align='center')
+    rects1 = ax.bar(x - width, [c * 100 for c in VZ_C_DAY_PERCENT], width, label='%Day Savings', align='center')
+
+    ax.set_ylabel('Percentage')
+    ax.set_title(f'Cost Breakdown by Days of Week - ({poolSize/60} mins)')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.legend()
+
+    ax.bar_label(rects1, padding=3)
+    ax.bar_label(rects2, padding=3)
+    fig.tight_layout()
+
+    plt.show()
+
 
 for pool in pool_sizes: 
-    load_edges_single_pool(pool)
-
-
-
+    # load_edges_single_pool(pool)
+    load_edges_DOWeek_single_pool(pool)
 
 def load_viz():
     labels = ['Jan', 'Feb']
