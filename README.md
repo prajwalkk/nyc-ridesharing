@@ -4,7 +4,7 @@
 
 1. Benito Alvares
 2. Harish Ventaktaraman
-3. Karan venkatesh Davanam
+3. Karan Venkatesh Davanam
 4. Prajwal Kishor Kammardi
 
 ## Components needed
@@ -123,3 +123,14 @@ CREATE INDEX pickup_time_index
 - `pip install .\geopandas-0.8.0-py3-none-any`
 
   replace `xxx` with your python version.
+
+
+## To run the project.
+
+1. Run the `final_project.ipynb` file to populate the database
+2. Run `nyc_ride_simulations` to run the simulations interactively. Note that the features are limited and it is just for demo purposes.
+3. To run a proper simulation, go to `run` folder. 
+	1. use `python run.py "2019-01-01 00:00:00"` to run simulations.
+	2. use `python viz.py` to see the visualizations.
+ 
+	4. 
