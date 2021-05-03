@@ -132,5 +132,3 @@ CREATE INDEX pickup_time_index
 3. To run a proper simulation, go to `run` folder. 
 	1. use `python run.py "2019-01-01 00:00:00"` to run simulations.
 	2. use `python viz.py` to see the visualizations.
- 
-	4. 
