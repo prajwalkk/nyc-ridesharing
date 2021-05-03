@@ -1,5 +1,8 @@
 # NYC Taxi Ride Sharing
 
+The project aims to develop a real-time ride sharing system to develop & study algorithms to optimally share rides among users. 
+
+
 ## Members
 
 1. Benito Alvares
