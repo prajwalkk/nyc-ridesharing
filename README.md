@@ -124,11 +124,11 @@ CREATE INDEX pickup_time_index
 
   replace `xxx` with your python version.
 
-
 ## To run the project.
 
-1. Run the `final_project.ipynb` file to populate the database
-2. Run `nyc_ride_simulations` to run the simulations interactively. Note that the features are limited and it is just for demo purposes.
-3. To run a proper simulation, go to `run` folder. 
-	1. use `python run.py "2019-01-01 00:00:00"` to run simulations.
-	2. use `python viz.py` to see the visualizations.
+1. Make sure that the OSRM backend is up and running. Instructions are in this [link](https://github.com/Project-OSRM/osrm-backend#using-docker)
+2. Run the `final_project.ipynb` file to populate the database
+3. Run `nyc_ride_simulations` to run the simulations interactively. Note that the features are limited and it is just for demo purposes.
+4. To run a proper simulation, go to `run` folder.
+   1. use `python run.py "2019-01-01 00:00:00"` to run simulations.
+   2. use `python viz.py` to see the visualizations.
